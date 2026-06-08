@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactieve vergelijking van huren versus kopen — Rotterdam.">
+<title>Huren vs. Kopen — Rotterdam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grain"></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Woonlasten-doorrekening · Rotterdam</p>
+    <h1>Huren <span class="vs">vs.</span> Kopen</h1>
+    <p class="subtitle">Cumulatieve kosten over de tijd, live doorgerekend. Schuif aan de aannames en de grafiek volgt direct.</p>
+    <div class="hero-note">
+      Bij kopen tellen we alleen de <em>werkelijke kosten</em> mee (rente + heffingen + VvE), niet de aflossing — aflossing is vermogensopbouw, geen verloren geld. Aan het eind verrekenen we de opbouw (aflossing + waardestijging − verkoopkosten − kosten tweede huis).
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="grid">
+    <aside class="controls" id="controls">
+      <h2>Aannames</h2>
+
+      <div class="group">
+        <h3>Huur</h3>
+        <div class="ctrl" data-key="HUUR_NU" data-min="1000" data-max="3000" data-step="10" data-fmt="euro"></div>
+        <div class="ctrl" data-key="HUUR_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
+      </div>
+
+      <div class="group">
+        <h3>Heffingen &amp; VvE (per maand, jaar 1)</h3>
+        <div class="ctrl" data-key="VVE_PER_MND" data-min="0" data-max="500" data-step="5" data-fmt="euro"></div>
+        <div class="ctrl" data-key="RIOOL_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
+        <div class="ctrl" data-key="ORV_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
+        <div class="ctrl" data-key="WOZ_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
+        <div class="ctrl" data-key="HEFFING_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
+      </div>
+
+      <div class="group">
+        <h3>Waarde &amp; verkoop</h3>
+        <div class="ctrl" data-key="OVERBIEDEN" data-min="0" data-max="150000" data-step="5000" data-fmt="euro"></div>
+        <div class="ctrl" data-key="WAARDESTIJGING" data-min="-0.03" data-max="0.08" data-step="0.005" data-fmt="pct"></div>
+        <div class="ctrl" data-key="MAKELAAR_PCT" data-min="0" data-max="0.03" data-step="0.0005" data-fmt="pct"></div>
+      </div>
+
+      <div class="group">
+        <h3>Overstap naar tweede huis</h3>
+        <div class="ctrl toggle" data-key="OVERSTAP_MEEREKENEN" data-fmt="bool"></div>
+        <div class="ctrl" data-key="TWEEDE_HUIS_PRIJS" data-min="300000" data-max="900000" data-step="10000" data-fmt="euro0"></div>
+        <div class="ctrl" data-key="OVERDRACHTSBEL_PCT" data-min="0" data-max="0.06" data-step="0.005" data-fmt="pct"></div>
+      </div>
+
+      <div class="group">
+        <h3>Horizon</h3>
+        <div class="ctrl" data-key="HORIZON_JAREN" data-min="1" data-max="31" data-step="1" data-fmt="jaar"></div>
+      </div>
+
+      <button id="reset" class="reset">↺ Terug naar basisscenario</button>
+    </aside>
+
+    <div class="results">
+      <div class="verdict" id="verdict"></div>
+
+      <div class="card chart-card">
+        <canvas id="chart"></canvas>
+      </div>
+
+      <div class="card">
+        <h2>Per jaar</h2>
+        <div class="table-wrap">
+          <table id="table">
+            <thead>
+              <tr>
+                <th>Jaar</th>
+                <th>Huur cum.</th>
+                <th>Koop kosten</th>
+                <th>Koop netto</th>
+                <th>Verschil</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="legend">Verschil positief = kopen is op dat moment voordeliger dan huren.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>OZB-tarief Rotterdam 2026 (0,0643% van WOZ). VvE is een schatting — controleer bij het servicekostenoverzicht. Geen financieel advies.</p>
+  <p class="src">© 2026</p>
+</footer>
+
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
