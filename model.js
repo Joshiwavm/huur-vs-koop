@@ -1,14 +1,31 @@
 // model.js — calculation logic.
-// Het hypotheekschema (rente, aflossing) wordt berekend met de standaard
-// annuïteitenformule uit (koopsom, rente, looptijd). Het fiscaal voordeel volgt
-// uit een lineair model dat op beide V&W-doorrekeningen (470k & 480k) past:
-//   fiscaal(jaar) = (rente(jaar) − EWF) × AFTREK_TARIEF
+// Het hypotheekschema (rente, aflossing) is verankerd aan de V&W-doorrekening
+// (480k @ 4,22%): bij de basiswaarden komt exact die tabel eruit. De annuïteiten-
+// formule wordt alleen gebruikt om te SCHALEN als koopsom of rente verschuift:
+//   schema(jaar) = ANKER(jaar) × (koopsom/480k) × [annuïteit(rente) / annuïteit(4,22%)]
+// Het fiscaal voordeel in de doorrekening volgt het model (rente − eigenwoning-
+// forfait) × aftrektarief ≈ (rente − €1.215) × 43,95%. We ankeren het echter
+// direct aan de tabel (zodat o.a. het halfjaar 1 exact klopt) en schalen mee.
+
+// Ankertabel uit de doorrekening (480k @ 4,22%). Jaar 1 (2026) is een halfjaar,
+// jaar 31 een reststukje — die vorm blijft behouden bij het schalen.
+const ANKER = {
+  BEDRAG: 480000,
+  RENTE: 0.0422,
+  RENTE_JAAR: {1:10093,2:19927,3:19569,4:19196,5:18808,6:18402,7:17979,8:17538,9:17077,10:16597,
+    11:16097,12:15574,13:15030,14:14461,15:13869,16:13251,17:12606,18:11934,19:11232,20:10501,
+    21:9738,22:8942,23:8112,24:7246,25:6343,26:5401,27:4418,28:3394,29:2325,30:1210,31:172},
+  AFLOSSING_JAAR: {1:4025,2:8308,3:8665,4:9038,5:9427,6:9833,7:10256,8:10697,9:11157,10:11637,
+    11:12138,12:12660,13:13205,14:13773,15:14366,16:14984,17:15629,18:16301,19:17002,20:17734,
+    21:18497,22:19293,23:20123,24:20989,25:21892,26:22834,27:23816,28:24841,29:25910,30:27024,31:13945},
+  FISCAAL_JAAR: {1:4170,2:8224,3:8067,4:7902,5:7731,6:7553,7:7367,8:7173,9:6972,10:6760,
+    11:6540,12:6311,13:6071,14:5821,15:5560,16:5289,17:5006,18:4711,19:4403,20:4081,
+    21:3745,22:3396,23:3031,24:2651,25:2253,26:1840,27:1408,28:957,29:487,30:0,31:0},
+};
 
 const VAST = {
   LOOPTIJD: 30,                 // looptijd hypotheek in jaren (vast)
   OZB_TARIEF: 0.000643,         // OZB-tarief Rotterdam 2026 (0,0643% van WOZ)
-  EWF_JAAR: 1215,               // eigenwoningforfait per jaar (uit doorrekening)
-  AFTREK_TARIEF: 0.4395,        // gehanteerd aftrektarief (uit doorrekening)
   NHG_GRENS: 470000,            // onder dit bedrag: NHG van toepassing
   NHG_RENTE: 0.0389,            // rente met NHG (uit 470k-doorrekening)
   NHG_KOSTEN: 1880,             // eenmalige NHG-kosten
@@ -86,12 +103,13 @@ function effectieveRente(p) {
   return p.KOOPSOM < VAST.NHG_GRENS ? VAST.NHG_RENTE : p.RENTE;
 }
 
-// Annuïteitenschema: rente en aflossing per jaar uit (koopsom, rente, looptijd).
-function jaarSchema(p) {
-  const P = p.KOOPSOM, i = effectieveRente(p) / 12, n = VAST.LOOPTIJD * 12;
-  const M = P * i / (1 - Math.pow(1 + i, -n));
+// Annuïteitenschema (30 volle jaren) uit een gegeven rente — alleen gebruikt
+// om de verhouding tussen twee rentes te bepalen.
+function annuiteit(jaarrente) {
+  const i = jaarrente / 12, n = VAST.LOOPTIJD * 12;
+  const M = i / (1 - Math.pow(1 + i, -n)); // per euro hoofdsom
   const rente = {}, aflossing = {};
-  let bal = P;
+  let bal = 1;
   for (let m = 1; m <= n; m++) {
     const r = bal * i, a = M - r;
     bal -= a;
@@ -102,8 +120,22 @@ function jaarSchema(p) {
   return { rente, aflossing };
 }
 
-function fiscaalJaar(renteJaar) {
-  return (renteJaar - VAST.EWF_JAAR) * VAST.AFTREK_TARIEF;
+// Schema verankerd aan de doorrekening, geschaald voor koopsom en rente.
+// Rente & aflossing schalen elk met hun eigen annuïteitsverhouding; het fiscaal
+// voordeel schaalt mee met de renteverhouding.
+function jaarSchema(p) {
+  const fBedrag = p.KOOPSOM / ANKER.BEDRAG;
+  const cur = annuiteit(effectieveRente(p));
+  const ref = annuiteit(ANKER.RENTE);
+  const rente = {}, aflossing = {}, fiscaal = {};
+  for (let j = 1; j <= VAST.LOOPTIJD + 1; j++) {
+    const rRatio = (cur.rente[j] && ref.rente[j]) ? cur.rente[j] / ref.rente[j] : 1;
+    const aRatio = (cur.aflossing[j] && ref.aflossing[j]) ? cur.aflossing[j] / ref.aflossing[j] : 1;
+    rente[j] = (ANKER.RENTE_JAAR[j] || 0) * fBedrag * rRatio;
+    aflossing[j] = (ANKER.AFLOSSING_JAAR[j] || 0) * fBedrag * aRatio;
+    fiscaal[j] = (ANKER.FISCAAL_JAAR[j] || 0) * fBedrag * rRatio;
+  }
+  return { rente, aflossing, fiscaal };
 }
 
 // Eenmalige koopkosten: kosten koper + extra + (NHG of overdrachtsbelasting).
@@ -134,7 +166,7 @@ function koopKostenCumulatief(p, jaren, schema) {
   const cum = []; let totaal = eenmaligeKosten(p);
   for (let j = 1; j <= jaren; j++) {
     const rente = schema.rente[j] || 0;
-    const fiscaal = fiscaalJaar(rente);
+    const fiscaal = schema.fiscaal[j] || 0;
     totaal += rente + heffingenJaar(p, j) - fiscaal;
     cum.push(totaal);
   }
