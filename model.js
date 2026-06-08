@@ -19,9 +19,8 @@ const FIXED = {
   KOOPSOM: 480000.0,
   WOZ_START: 480000.0,
   OZB_TARIEF: 0.000643,
-  AANKOOPKOSTEN_NU: 6552.0,
   OVERDRACHTSBEL_NU: 0.0,
-  NIEUWE_FIN_KOSTEN: 6552.0, // = AANKOOPKOSTEN_NU in notebook
+  NIEUWE_FIN_KOSTEN: 6552.0,
 };
 
 // Adjustable assumptions — these are the slider defaults (baseline scenario).
@@ -39,6 +38,8 @@ const DEFAULTS = {
   TWEEDE_HUIS_PRIJS: 600000,
   OVERDRACHTSBEL_PCT: 0.02,
   OVERBIEDEN: 0,
+  AANKOOPKOSTEN_NU: 6552,
+  EXTRA_KOSTEN_KOPER: 0,
   HORIZON_JAREN: 5,
 };
 
@@ -56,6 +57,8 @@ const TOOLTIPS = {
   OVERSTAP_MEEREKENEN:"Aan/uit: rekent de eenmalige kosten van het kopen van een volgend huis mee (overdrachtsbelasting + financieringskosten). Zet uit om alleen dit huis te beoordelen.\n\nGebruik:\nals AAN: overstap = TWEEDE_HUIS_PRIJS\n                    × OVERDRACHTSBEL_PCT\n                  + NIEUWE_FIN_KOSTEN",
   TWEEDE_HUIS_PRIJS:  "Geschatte koopsom van het volgende huis na verkoop van dit huis. Bepaalt de hoogte van de overdrachtsbelasting bij de overstap.\n\nGebruik:\noverdracht = TWEEDE_HUIS_PRIJS\n            × OVERDRACHTSBEL_PCT",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting bij aankoop van een volgend (niet-eerste) huis. Startersvrijstelling geldt éénmalig — bij het tweede huis betaal je dit tarief.\n\nGebruik:\nbelasting = TWEEDE_HUIS_PRIJS\n           × OVERDRACHTSBEL_PCT",
+  AANKOOPKOSTEN_NU:   "Eenmalige kosten bij aankoop: notariskosten, taxatie, hypotheekadvies etc. (kosten koper).\n\nGebruik:\neenmalig = AANKOOPKOSTEN_NU + EXTRA_KOSTEN_KOPER",
+  EXTRA_KOSTEN_KOPER: "Aanvullende eenmalige kosten, bijv. bouwtechnische keuring of aankoopmakelaar.\n\nGebruik:\neenmalig = AANKOOPKOSTEN_NU + EXTRA_KOSTEN_KOPER",
   HORIZON_JAREN:      "Aantal jaren dat de doorrekening loopt. De grafiek en tabel tonen precies dit aantal jaar.",
 };
 
@@ -73,6 +76,8 @@ const LABELS = {
   TWEEDE_HUIS_PRIJS: "Koopsom volgend huis",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting 2e huis",
   OVERBIEDEN: "Overbieden (marktwaarde − koopsom)",
+  AANKOOPKOSTEN_NU: "Kosten koper (notaris, taxatie, advies)",
+  EXTRA_KOSTEN_KOPER: "Extra kosten koper (bijv. bouwkundige keuring)",
   HORIZON_JAREN: "Horizon",
 };
 
@@ -93,7 +98,7 @@ function heffingenJaar(p, j) {
 }
 
 function koopKostenCumulatief(p, jaren) {
-  const cum = []; let totaal = FIXED.AANKOOPKOSTEN_NU + FIXED.OVERDRACHTSBEL_NU;
+  const cum = []; let totaal = p.AANKOOPKOSTEN_NU + p.EXTRA_KOSTEN_KOPER + FIXED.OVERDRACHTSBEL_NU;
   for (let j = 1; j <= jaren; j++) {
     const rente = SCHEDULE.RENTE[j] || 0;
     const fiscaal = SCHEDULE.FISCAAL[j] || 0;

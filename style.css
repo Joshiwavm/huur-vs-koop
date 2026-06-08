@@ -83,6 +83,16 @@ main { max-width: 1160px; margin: 0 auto; padding: clamp(2rem,4vw,3.5rem) 1.5rem
   font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
   color: var(--accent); margin: 0 0 .9rem;
 }
+.readonly-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: .88rem; color: var(--ink-soft); margin-bottom: 1rem;
+  padding-bottom: .6rem; border-bottom: 1px dashed var(--line);
+}
+.readonly-row span:last-child {
+  font-family: "Spline Sans Mono", monospace; font-weight: 600;
+  font-size: .9rem; color: var(--ink);
+}
+
 .ctrl { margin-bottom: 1rem; }
 .ctrl:last-child { margin-bottom: 0; }
 .ctrl .row { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .35rem; }
