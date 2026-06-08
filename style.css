@@ -81,8 +81,23 @@ main { max-width: 1160px; margin: 0 auto; padding: clamp(2rem,4vw,3.5rem) 1.5rem
 .group h3 {
   font-family: "Spline Sans Mono", monospace; font-weight: 600;
   font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
-  color: var(--accent); margin: 0 0 .9rem;
+  color: var(--accent); margin: 0; display: inline;
 }
+
+/* Collapsible dropdown groups */
+details.group > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: .5rem;
+  margin-bottom: .9rem;
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group > summary::before {
+  content: "▸"; color: var(--accent); font-size: .7rem;
+  transition: transform .15s; flex-shrink: 0;
+}
+details.group[open] > summary::before { transform: rotate(90deg); }
+details.group:not([open]) > summary { margin-bottom: 0; }
+details.group > summary:hover h3 { color: var(--ink); }
 .readonly-row {
   display: flex; justify-content: space-between; align-items: baseline;
   font-size: .88rem; color: var(--ink-soft); margin-bottom: 1rem;

@@ -30,49 +30,49 @@
     <aside class="controls" id="controls">
       <h2>Aannames</h2>
 
-      <div class="group">
-        <h3>Huur</h3>
+      <details class="group" open>
+        <summary><h3>Huur kosten</h3></summary>
         <div class="ctrl" data-key="HUUR_NU" data-min="1000" data-max="3000" data-step="10" data-fmt="euro"></div>
         <div class="ctrl" data-key="HUUR_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
-      </div>
+      </details>
 
-      <div class="group">
-        <h3>Heffingen &amp; VvE (per maand, jaar 1)</h3>
-        <div class="ctrl" data-key="VVE_PER_MND" data-min="0" data-max="500" data-step="5" data-fmt="euro"></div>
-        <div class="ctrl" data-key="RIOOL_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
-        <div class="ctrl" data-key="ORV_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
-        <div class="ctrl" data-key="WOZ_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
-        <div class="ctrl" data-key="HEFFING_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
-      </div>
-
-      <div class="group">
-        <h3>Eenmalige kosten</h3>
+      <details class="group" open>
+        <summary><h3>Koop kosten</h3></summary>
         <div class="readonly-row">
           <span>Koopprijs / taxatie</span>
           <span>€ 480.000</span>
         </div>
         <div class="ctrl" data-key="AANKOOPKOSTEN_NU" data-min="0" data-max="20000" data-step="100" data-fmt="euro"></div>
         <div class="ctrl" data-key="EXTRA_KOSTEN_KOPER" data-min="0" data-max="20000" data-step="100" data-fmt="euro"></div>
-      </div>
+      </details>
 
-      <div class="group">
-        <h3>Waarde &amp; verkoop</h3>
+      <details class="group" open>
+        <summary><h3>Maandelijkse lasten koophuis</h3></summary>
+        <div class="ctrl" data-key="VVE_PER_MND" data-min="0" data-max="500" data-step="5" data-fmt="euro"></div>
+        <div class="ctrl" data-key="RIOOL_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
+        <div class="ctrl" data-key="ORV_PER_MND" data-min="0" data-max="100" data-step="1" data-fmt="euro"></div>
+        <div class="ctrl" data-key="WOZ_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
+        <div class="ctrl" data-key="HEFFING_STIJGING" data-min="0" data-max="0.10" data-step="0.005" data-fmt="pct"></div>
+      </details>
+
+      <details class="group" open>
+        <summary><h3>Vermogensopbouw &amp; verkoop</h3></summary>
         <div class="ctrl" data-key="OVERBIEDEN" data-min="0" data-max="150000" data-step="5000" data-fmt="euro"></div>
         <div class="ctrl" data-key="WAARDESTIJGING" data-min="-0.03" data-max="0.08" data-step="0.005" data-fmt="pct"></div>
         <div class="ctrl" data-key="MAKELAAR_PCT" data-min="0" data-max="0.03" data-step="0.0005" data-fmt="pct"></div>
-      </div>
+      </details>
 
-      <div class="group">
-        <h3>Overstap naar tweede huis</h3>
+      <details class="group" open>
+        <summary><h3>Overstap naar tweede huis</h3></summary>
         <div class="ctrl toggle" data-key="OVERSTAP_MEEREKENEN" data-fmt="bool"></div>
         <div class="ctrl" data-key="TWEEDE_HUIS_PRIJS" data-min="300000" data-max="900000" data-step="10000" data-fmt="euro0"></div>
         <div class="ctrl" data-key="OVERDRACHTSBEL_PCT" data-min="0" data-max="0.06" data-step="0.005" data-fmt="pct"></div>
-      </div>
+      </details>
 
-      <div class="group">
-        <h3>Horizon</h3>
+      <details class="group" open>
+        <summary><h3>Horizon</h3></summary>
         <div class="ctrl" data-key="HORIZON_JAREN" data-min="1" data-max="31" data-step="1" data-fmt="jaar"></div>
-      </div>
+      </details>
 
       <button id="reset" class="reset">↺ Terug naar basisscenario</button>
     </aside>
