@@ -256,8 +256,25 @@ function renderTable(r) {
   }).join("");
 }
 
+// Onder de NHG-grens wordt de rente vastgezet op het NHG-tarief: slider op slot.
+function syncNHGLock() {
+  const el = document.querySelector('.ctrl[data-key="RENTE"]');
+  if (!el) return;
+  const nhg = state.KOOPSOM < VAST.NHG_GRENS;
+  const slider = el.querySelector("input[type=range]");
+  const valSpan = el.querySelector('[data-val="RENTE"]');
+  slider.disabled = nhg;
+  el.classList.toggle("locked", nhg);
+  if (nhg) {
+    valSpan.textContent = fmtPct(VAST.NHG_RENTE) + " (NHG)";
+  } else {
+    valSpan.textContent = fmtPct(state.RENTE);
+  }
+}
+
 function render() {
   const r = compute(state);
+  syncNHGLock();
   renderVerdict(r);
   renderTable(r);
   try { if (typeof Chart !== "undefined") renderChart(r); }

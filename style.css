@@ -108,6 +108,9 @@ details.group > summary:hover h3 { color: var(--ink); }
   font-size: .9rem; color: var(--ink);
 }
 
+.ctrl.locked { opacity: .5; }
+.ctrl.locked input[type=range] { cursor: not-allowed; }
+
 .ctrl { margin-bottom: 1rem; }
 .ctrl:last-child { margin-bottom: 0; }
 .ctrl .row { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .35rem; }
