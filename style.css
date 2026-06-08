@@ -98,15 +98,6 @@ details.group > summary::before {
 details.group[open] > summary::before { transform: rotate(90deg); }
 details.group:not([open]) > summary { margin-bottom: 0; }
 details.group > summary:hover h3 { color: var(--ink); }
-.readonly-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: .88rem; color: var(--ink-soft); margin-bottom: 1rem;
-  padding-bottom: .6rem; border-bottom: 1px dashed var(--line);
-}
-.readonly-row span:last-child {
-  font-family: "Spline Sans Mono", monospace; font-weight: 600;
-  font-size: .9rem; color: var(--ink);
-}
 
 .ctrl.locked { opacity: .5; }
 .ctrl.locked input[type=range] { cursor: not-allowed; }
