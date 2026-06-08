@@ -175,6 +175,76 @@ td.pos { color: var(--buy); }
 td.neg { color: var(--rent); }
 .legend { font-size: .82rem; color: var(--ink-soft); margin: 1rem 0 0; font-family: "Spline Sans Mono", monospace; }
 
+/* ---- Info icon & Tooltip ---- */
+.info-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-left: 4px;
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: .78rem; color: var(--accent); opacity: .7;
+  vertical-align: middle; line-height: 1;
+  transition: opacity .15s;
+}
+.info-icon:hover, .info-icon:focus { opacity: 1; outline: none; }
+
+.tooltip {
+  position: absolute; z-index: 1000;
+  max-width: 280px; padding: .75rem 1rem;
+  background: var(--ink); color: var(--paper);
+  font-family: "Spline Sans Mono", monospace; font-size: .78rem; line-height: 1.55;
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  white-space: pre-wrap; word-break: break-word;
+  pointer-events: none; opacity: 0; transition: opacity .15s;
+}
+.tooltip.visible { opacity: 1; }
+
+/* ---- Mobile controls toggle ---- */
+.controls-toggle {
+  display: none;
+  width: 100%; padding: .65rem 1rem; margin-bottom: .5rem;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: 8px; color: var(--ink); font-family: "Spline Sans Mono", monospace;
+  font-size: .85rem; cursor: pointer; text-align: left;
+}
+.controls-toggle:hover { background: var(--line); }
+
+@media (max-width: 880px) {
+  .controls-toggle { display: block; }
+
+  /* hide all children except the toggle button and h2 by default */
+  .controls .group,
+  .controls .reset { display: none; }
+
+  /* when open, show everything */
+  .controls.open .group,
+  .controls.open .reset { display: block; }
+}
+
+/* ---- Mobile general ---- */
+@media (max-width: 600px) {
+  .hero { padding: 2rem 1rem 1.5rem; }
+  .hero-note { display: none; }
+  main { padding: 1.2rem 1rem .5rem; }
+
+  /* larger touch targets for sliders */
+  input[type=range] { height: 6px; }
+  input[type=range]::-webkit-slider-thumb { width: 24px; height: 24px; }
+  input[type=range]::-moz-range-thumb     { width: 24px; height: 24px; }
+
+  /* table: smaller text so it fits */
+  table { font-size: .75rem; }
+  th, td { padding: .4rem .4rem; }
+
+  .verdict { font-size: 1rem; padding: 1rem; }
+  .verdict .big { font-size: clamp(1.3rem, 6vw, 1.8rem); }
+
+  /* tooltip: full-width at bottom on mobile */
+  .tooltip {
+    position: fixed; bottom: 1rem; left: 1rem; right: 1rem;
+    max-width: none; top: auto;
+    pointer-events: auto;
+  }
+}
+
 /* ---- Footer ---- */
 footer {
   max-width: 1160px; margin: 2rem auto 0; padding: 2rem 1.5rem 3rem;

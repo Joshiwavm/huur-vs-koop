@@ -42,6 +42,23 @@ const DEFAULTS = {
   HORIZON_JAREN: 5,
 };
 
+const TOOLTIPS = {
+  HUUR_NU:            "De huidige kale maandhuur, exclusief gas/water/licht.\n\nGebruik:\njaarhuur(j) = HUUR_NU × 12\n             × (1 + HUUR_STIJGING)^(j−1)",
+  HUUR_STIJGING:      "Jaarlijkse procentuele huurverhoging. Huur groeit elk jaar exponentieel.\n\nGebruik:\njaarhuur(j) = HUUR_NU × 12\n             × (1 + HUUR_STIJGING)^(j−1)",
+  VVE_PER_MND:        "Maandelijkse bijdrage aan de Vereniging van Eigenaren. Dekt gezamenlijk onderhoud van het gebouw. Stijgt jaarlijks met HEFFING_STIJGING.\n\nGebruik:\nvve_jaar(j) = VVE_PER_MND\n             × (1 + HEFFING_STIJGING)^(j−1) × 12",
+  RIOOL_PER_MND:      "Maandelijks aandeel van de gemeentelijke rioolheffing. Stijgt jaarlijks met HEFFING_STIJGING.\n\nGebruik:\nriool_jaar(j) = RIOOL_PER_MND\n               × (1 + HEFFING_STIJGING)^(j−1) × 12",
+  ORV_PER_MND:        "Overlijdensrisicoverzekering — vaak verplicht bij hypotheek. Stijgt met HEFFING_STIJGING.\n\nGebruik:\norv_jaar(j) = ORV_PER_MND\n             × (1 + HEFFING_STIJGING)^(j−1) × 12",
+  WOZ_STIJGING:       "Jaarlijkse stijging van de WOZ-waarde. Drijft de OZB-belasting op omdat OZB als percentage van de WOZ wordt berekend.\n\nGebruik:\nwoz(j) = WOZ_START × (1 + WOZ_STIJGING)^(j−1)\nozb(j) = woz(j) × OZB_TARIEF",
+  HEFFING_STIJGING:   "Jaarlijkse stijging van VvE, riool en ORV samen (inflatie-achtig).\n\nGebruik:\nheffing(j) = heffing(1)\n            × (1 + HEFFING_STIJGING)^(j−1)",
+  WAARDESTIJGING:     "Jaarlijkse procentuele stijging van de marktwaarde van de woning. Bij 0% groeit de waarde niet. Heeft ook effect op de OZB via WOZ_STIJGING.\n\nGebruik:\nwaarde(j) = (KOOPSOM + OVERBIEDEN)\n           × (1 + WAARDESTIJGING)^j",
+  MAKELAAR_PCT:       "Courtage die de verkoopmakelaar rekent over de verkoopprijs bij verkoop.\n\nGebruik:\nverkoopkosten = waarde(j) × MAKELAAR_PCT",
+  OVERBIEDEN:         "Als de woning onder de marktwaarde gekocht wordt, is dit het verschil (marktwaarde − koopsom). Dit levert direct extra vermogen op bij verkoop, en groeit mee met WAARDESTIJGING.\n\nGebruik:\nstartwaarde = KOOPSOM + OVERBIEDEN\nwaarde(j)   = startwaarde × (1 + WAARDESTIJGING)^j",
+  OVERSTAP_MEEREKENEN:"Aan/uit: rekent de eenmalige kosten van het kopen van een volgend huis mee (overdrachtsbelasting + financieringskosten). Zet uit om alleen dit huis te beoordelen.\n\nGebruik:\nals AAN: overstap = TWEEDE_HUIS_PRIJS\n                    × OVERDRACHTSBEL_PCT\n                  + NIEUWE_FIN_KOSTEN",
+  TWEEDE_HUIS_PRIJS:  "Geschatte koopsom van het volgende huis na verkoop van dit huis. Bepaalt de hoogte van de overdrachtsbelasting bij de overstap.\n\nGebruik:\noverdracht = TWEEDE_HUIS_PRIJS\n            × OVERDRACHTSBEL_PCT",
+  OVERDRACHTSBEL_PCT: "Overdrachtsbelasting bij aankoop van een volgend (niet-eerste) huis. Startersvrijstelling geldt éénmalig — bij het tweede huis betaal je dit tarief.\n\nGebruik:\nbelasting = TWEEDE_HUIS_PRIJS\n           × OVERDRACHTSBEL_PCT",
+  HORIZON_JAREN:      "Aantal jaren dat de doorrekening loopt. De grafiek en tabel tonen precies dit aantal jaar.",
+};
+
 const LABELS = {
   HUUR_NU: "Huidige kale huur / maand",
   HUUR_STIJGING: "Jaarlijkse huurverhoging",
