@@ -56,7 +56,6 @@ const DEFAULTS = {
   OVERSTAP_MEEREKENEN: true,
   TWEEDE_HUIS_PRIJS: 600000,
   OVERDRACHTSBEL_PCT: 0.02,
-  BOX3_MEEREKENEN: false,
   HORIZON_JAREN: 5,
 };
 
@@ -75,10 +74,9 @@ const TOOLTIPS = {
   HEFFING_STIJGING:   "Jaarlijkse stijging van VvE, riool en ORV samen (inflatie-achtig).",
   WAARDESTIJGING:     "Jaarlijkse procentuele stijging van de marktwaarde van de woning. Bij 0% groeit de waarde niet.",
   MAKELAAR_PCT:       "Courtage die de verkoopmakelaar rekent over de verkoopprijs. Wordt bij elke verkoop van dit huis afgetrokken, los van of je daarna een ander huis koopt.",
-  OVERSTAP_MEEREKENEN:"Aan/uit: rekent de eenmalige kosten van het kopen van een volgend huis mee (overdrachtsbelasting + financieringskosten). Zet uit om alleen dit huis te beoordelen.",
+  OVERSTAP_MEEREKENEN:"Aan: je koopt een volgend huis — overdrachtsbelasting + financieringskosten worden meegerekend. Uit: je zet de verkoopopbrengst op de bank en betaalt box 3-belasting over de overwaarde boven €118.714 (samen, 2026), tegen 1,28% × 36%.",
   TWEEDE_HUIS_PRIJS:  "Geschatte koopsom van het volgende huis na verkoop van dit huis. Bepaalt de hoogte van de overdrachtsbelasting bij de overstap.",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting bij aankoop van een volgend (niet-eerste) huis. De startersvrijstelling geldt éénmalig — bij het tweede huis betaal je dit tarief.",
-  BOX3_MEEREKENEN:    "Rekent 1 jaar box 3-belasting over de verkoopopbrengst boven het heffingvrij vermogen (€118.714 samen, 2026), tegen 1,28% × 36%. Alleen relevant als het geld een peildatum op je rekening staat — stop je het meteen in een volgend huis, dan is box 3 ≈ €0.",
   HORIZON_JAREN:      "Aantal jaren dat de doorrekening loopt. De grafiek en tabel tonen precies dit aantal jaar.",
 };
 
@@ -100,7 +98,6 @@ const LABELS = {
   OVERSTAP_MEEREKENEN: "Overstapkosten meerekenen",
   TWEEDE_HUIS_PRIJS: "Koopsom volgend huis",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting 2e huis",
-  BOX3_MEEREKENEN: "Box 3 over verkoopopbrengst",
   HORIZON_JAREN: "Horizon",
 };
 
@@ -187,9 +184,13 @@ function koopKostenCumulatief(p, jaren, schema) {
 }
 
 function overstapkosten(p, woningwaarde) {
-  if (!p.OVERSTAP_MEEREKENEN) return 0;
   const prijs2e = (p.TWEEDE_HUIS_PRIJS != null) ? p.TWEEDE_HUIS_PRIJS : woningwaarde;
   return prijs2e * p.OVERDRACHTSBEL_PCT + VAST.NIEUWE_FIN_KOSTEN;
+}
+
+// Box 3 over de overwaarde boven het heffingvrij vermogen (1 jaar).
+function box3Belasting(overwaarde) {
+  return Math.max(0, overwaarde - VAST.BOX3_VRIJ) * VAST.BOX3_RENDEMENT * VAST.BOX3_TARIEF;
 }
 
 function opgebouwdVermogen(p, jaren, schema) {
@@ -204,11 +205,12 @@ function opgebouwdVermogen(p, jaren, schema) {
     const waardestijging = woningwaarde - marktwaardeStart;
     const verkoopkosten = woningwaarde * p.MAKELAAR_PCT;
     const overwaarde = afgelost + waardestijging - verkoopkosten;
-    let box3 = 0;
-    if (p.BOX3_MEEREKENEN) {
-      box3 = Math.max(0, overwaarde - VAST.BOX3_VRIJ) * VAST.BOX3_RENDEMENT * VAST.BOX3_TARIEF;
-    }
-    cum.push(overwaarde - overstapkosten(p, woningwaarde) - box3);
+    // Overstap aan: koop volgend huis (overstapkosten). Overstap uit: zet de
+    // overwaarde op de bank → box 3-belasting.
+    const aftrek = p.OVERSTAP_MEEREKENEN
+      ? overstapkosten(p, woningwaarde)
+      : box3Belasting(overwaarde);
+    cum.push(overwaarde - aftrek);
   }
   return cum;
 }
