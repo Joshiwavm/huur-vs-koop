@@ -3,9 +3,10 @@
 // (480k @ 4,22%): bij de basiswaarden komt exact die tabel eruit. De annuïteiten-
 // formule wordt alleen gebruikt om te SCHALEN als koopsom of rente verschuift:
 //   schema(jaar) = ANKER(jaar) × (koopsom/480k) × [annuïteit(rente) / annuïteit(4,22%)]
-// Het fiscaal voordeel in de doorrekening volgt het model (rente − eigenwoning-
-// forfait) × aftrektarief ≈ (rente − €1.215) × 43,95%. We ankeren het echter
-// direct aan de tabel (zodat o.a. het halfjaar 1 exact klopt) en schalen mee.
+// Het fiscaal voordeel = (rente − eigenwoningforfait) × aftrektarief, met
+// forfait = 0,35% van de WOZ (= koopsom). Aftrektarief 43,95% komt uit de
+// doorrekening. Bij de basiswaarden valt dit ~€5/jaar af van de PDF (die de oude
+// WOZ van ~350k gebruikte i.p.v. de koopsom).
 
 // Ankertabel uit de doorrekening (480k @ 4,22%). Jaar 1 (2026) is een halfjaar,
 // jaar 31 een reststukje — die vorm blijft behouden bij het schalen.
@@ -18,14 +19,13 @@ const ANKER = {
   AFLOSSING_JAAR: {1:4025,2:8308,3:8665,4:9038,5:9427,6:9833,7:10256,8:10697,9:11157,10:11637,
     11:12138,12:12660,13:13205,14:13773,15:14366,16:14984,17:15629,18:16301,19:17002,20:17734,
     21:18497,22:19293,23:20123,24:20989,25:21892,26:22834,27:23816,28:24841,29:25910,30:27024,31:13945},
-  FISCAAL_JAAR: {1:4170,2:8224,3:8067,4:7902,5:7731,6:7553,7:7367,8:7173,9:6972,10:6760,
-    11:6540,12:6311,13:6071,14:5821,15:5560,16:5289,17:5006,18:4711,19:4403,20:4081,
-    21:3745,22:3396,23:3031,24:2651,25:2253,26:1840,27:1408,28:957,29:487,30:0,31:0},
 };
 
 const VAST = {
   LOOPTIJD: 30,                 // looptijd hypotheek in jaren (vast)
   OZB_TARIEF: 0.000643,         // OZB-tarief Rotterdam 2026 (0,0643% van WOZ)
+  FORFAIT_PCT: 0.0035,          // eigenwoningforfait: 0,35% van de WOZ (= koopsom)
+  AFTREK_TARIEF: 0.4395,        // gehanteerd aftrektarief (uit doorrekening)
   NHG_GRENS: 470000,            // onder dit bedrag: NHG van toepassing
   NHG_RENTE: 0.0389,            // rente met NHG (uit 470k-doorrekening)
   NHG_KOSTEN: 1880,             // eenmalige NHG-kosten
@@ -120,20 +120,27 @@ function annuiteit(jaarrente) {
   return { rente, aflossing };
 }
 
+// Jaar 1 (2026) en jaar 31 zijn halve jaren (aankoop medio 2026).
+function jaarFractie(j) {
+  return (j === 1 || j === VAST.LOOPTIJD + 1) ? 0.5 : 1;
+}
+
 // Schema verankerd aan de doorrekening, geschaald voor koopsom en rente.
-// Rente & aflossing schalen elk met hun eigen annuïteitsverhouding; het fiscaal
-// voordeel schaalt mee met de renteverhouding.
+// Rente & aflossing schalen elk met hun eigen annuïteitsverhouding. Het fiscaal
+// voordeel = (rente − eigenwoningforfait) × aftrektarief, met forfait = 0,35% van
+// de WOZ (= koopsom), pro rata voor de halve jaren.
 function jaarSchema(p) {
   const fBedrag = p.KOOPSOM / ANKER.BEDRAG;
   const cur = annuiteit(effectieveRente(p));
   const ref = annuiteit(ANKER.RENTE);
+  const forfaitVol = VAST.FORFAIT_PCT * p.KOOPSOM;
   const rente = {}, aflossing = {}, fiscaal = {};
   for (let j = 1; j <= VAST.LOOPTIJD + 1; j++) {
     const rRatio = (cur.rente[j] && ref.rente[j]) ? cur.rente[j] / ref.rente[j] : 1;
     const aRatio = (cur.aflossing[j] && ref.aflossing[j]) ? cur.aflossing[j] / ref.aflossing[j] : 1;
     rente[j] = (ANKER.RENTE_JAAR[j] || 0) * fBedrag * rRatio;
     aflossing[j] = (ANKER.AFLOSSING_JAAR[j] || 0) * fBedrag * aRatio;
-    fiscaal[j] = (ANKER.FISCAAL_JAAR[j] || 0) * fBedrag * rRatio;
+    fiscaal[j] = (rente[j] - forfaitVol * jaarFractie(j)) * VAST.AFTREK_TARIEF;
   }
   return { rente, aflossing, fiscaal };
 }
@@ -181,11 +188,14 @@ function overstapkosten(p, woningwaarde) {
 
 function opgebouwdVermogen(p, jaren, schema) {
   const cum = []; let afgelost = 0;
+  // Overbieden = eigen inleg boven de taxatie: zit in de woningwaarde en komt bij
+  // verkoop terug (vestzak-broekzak), telt dus niet als gratis vermogen — alleen
+  // de waardegroei erover telt mee.
   const marktwaardeStart = p.KOOPSOM + (p.OVERBIEDEN || 0);
   for (let j = 1; j <= jaren; j++) {
     afgelost += schema.aflossing[j] || 0;
     const woningwaarde = marktwaardeStart * Math.pow(1 + p.WAARDESTIJGING, j);
-    const waardestijging = woningwaarde - p.KOOPSOM;
+    const waardestijging = woningwaarde - marktwaardeStart;
     const verkoopkosten = woningwaarde * p.MAKELAAR_PCT;
     cum.push(afgelost + waardestijging - verkoopkosten - overstapkosten(p, woningwaarde));
   }
