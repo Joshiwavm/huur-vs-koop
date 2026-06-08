@@ -32,6 +32,9 @@ const VAST = {
   STARTERS_GRENS: 555000,       // boven dit bedrag vervalt de startersvrijstelling
   OVERDRACHTSBELASTING: 0.02,   // overdrachtsbelasting (2%) boven de startersgrens
   NIEUWE_FIN_KOSTEN: 6552,      // financieringskosten bij aankoop tweede huis
+  BOX3_VRIJ: 118714,            // heffingvrij vermogen 2026 (fiscale partners)
+  BOX3_RENDEMENT: 0.0128,       // forfaitair rendement spaargeld 2026
+  BOX3_TARIEF: 0.36,            // box 3-tarief 2026
 };
 
 // Adjustable assumptions — slider defaults (baseline scenario).
@@ -53,6 +56,7 @@ const DEFAULTS = {
   OVERSTAP_MEEREKENEN: true,
   TWEEDE_HUIS_PRIJS: 600000,
   OVERDRACHTSBEL_PCT: 0.02,
+  BOX3_MEEREKENEN: false,
   HORIZON_JAREN: 5,
 };
 
@@ -64,16 +68,17 @@ const TOOLTIPS = {
   AANKOOPKOSTEN_NU:   "Eenmalige kosten bij aankoop: notariskosten, taxatie, hypotheekadvies etc. (kosten koper).",
   EXTRA_KOSTEN_KOPER: "Aanvullende eenmalige kosten, bijv. bouwtechnische keuring of aankoopmakelaar.",
   OVERBIEDEN:         "Als de woning onder de marktwaarde gekocht wordt, is dit het verschil (marktwaarde − koopsom). Dit levert direct extra vermogen op bij verkoop en groeit mee met de waardestijging.",
-  VVE_PER_MND:        "Maandelijkse bijdrage aan de Vereniging van Eigenaren. Dekt gezamenlijk onderhoud van het gebouw. Stijgt jaarlijks met de heffingenstijging.",
+  VVE_PER_MND:        "Maandelijkse bijdrage aan de Vereniging van Eigenaren. Dekt gezamenlijk onderhoud van het gebouw. Stijgt jaarlijks met de heffingenstijging. Dit bedrag is een schatting — controleer het servicekostenoverzicht van de VvE.",
   RIOOL_PER_MND:      "Maandelijks aandeel van de gemeentelijke rioolheffing. Stijgt jaarlijks met de heffingenstijging.",
   ORV_PER_MND:        "Overlijdensrisicoverzekering — vaak verplicht bij hypotheek. Stijgt jaarlijks met de heffingenstijging.",
-  WOZ_STIJGING:       "Jaarlijkse stijging van de WOZ-waarde. Drijft de OZB-belasting op, omdat OZB als percentage van de WOZ-waarde wordt berekend.",
+  WOZ_STIJGING:       "Jaarlijkse stijging van de WOZ-waarde. Drijft de OZB-belasting op, omdat de OZB 0,0643% van de WOZ-waarde is (tarief Rotterdam 2026).",
   HEFFING_STIJGING:   "Jaarlijkse stijging van VvE, riool en ORV samen (inflatie-achtig).",
   WAARDESTIJGING:     "Jaarlijkse procentuele stijging van de marktwaarde van de woning. Bij 0% groeit de waarde niet.",
   MAKELAAR_PCT:       "Courtage die de verkoopmakelaar rekent over de verkoopprijs. Wordt bij elke verkoop van dit huis afgetrokken, los van of je daarna een ander huis koopt.",
   OVERSTAP_MEEREKENEN:"Aan/uit: rekent de eenmalige kosten van het kopen van een volgend huis mee (overdrachtsbelasting + financieringskosten). Zet uit om alleen dit huis te beoordelen.",
   TWEEDE_HUIS_PRIJS:  "Geschatte koopsom van het volgende huis na verkoop van dit huis. Bepaalt de hoogte van de overdrachtsbelasting bij de overstap.",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting bij aankoop van een volgend (niet-eerste) huis. De startersvrijstelling geldt éénmalig — bij het tweede huis betaal je dit tarief.",
+  BOX3_MEEREKENEN:    "Rekent 1 jaar box 3-belasting over de verkoopopbrengst boven het heffingvrij vermogen (€118.714 samen, 2026), tegen 1,28% × 36%. Alleen relevant als het geld een peildatum op je rekening staat — stop je het meteen in een volgend huis, dan is box 3 ≈ €0.",
   HORIZON_JAREN:      "Aantal jaren dat de doorrekening loopt. De grafiek en tabel tonen precies dit aantal jaar.",
 };
 
@@ -95,12 +100,13 @@ const LABELS = {
   OVERSTAP_MEEREKENEN: "Overstapkosten meerekenen",
   TWEEDE_HUIS_PRIJS: "Koopsom volgend huis",
   OVERDRACHTSBEL_PCT: "Overdrachtsbelasting 2e huis",
+  BOX3_MEEREKENEN: "Box 3 over verkoopopbrengst",
   HORIZON_JAREN: "Horizon",
 };
 
 // Effectieve rente: onder de NHG-grens geldt automatisch het NHG-tarief.
 function effectieveRente(p) {
-  return p.KOOPSOM < VAST.NHG_GRENS ? VAST.NHG_RENTE : p.RENTE;
+  return p.KOOPSOM <= VAST.NHG_GRENS ? VAST.NHG_RENTE : p.RENTE;
 }
 
 // Annuïteitenschema (30 volle jaren) uit een gegeven rente — alleen gebruikt
@@ -149,7 +155,7 @@ function jaarSchema(p) {
 function eenmaligeKosten(p) {
   let totaal = p.AANKOOPKOSTEN_NU + p.EXTRA_KOSTEN_KOPER;
   if (p.KOOPSOM > VAST.STARTERS_GRENS) totaal += p.KOOPSOM * VAST.OVERDRACHTSBELASTING;
-  if (p.KOOPSOM < VAST.NHG_GRENS) totaal += VAST.NHG_KOSTEN;
+  if (p.KOOPSOM <= VAST.NHG_GRENS) totaal += VAST.NHG_KOSTEN;
   return totaal;
 }
 
@@ -197,7 +203,12 @@ function opgebouwdVermogen(p, jaren, schema) {
     const woningwaarde = marktwaardeStart * Math.pow(1 + p.WAARDESTIJGING, j);
     const waardestijging = woningwaarde - marktwaardeStart;
     const verkoopkosten = woningwaarde * p.MAKELAAR_PCT;
-    cum.push(afgelost + waardestijging - verkoopkosten - overstapkosten(p, woningwaarde));
+    const overwaarde = afgelost + waardestijging - verkoopkosten;
+    let box3 = 0;
+    if (p.BOX3_MEEREKENEN) {
+      box3 = Math.max(0, overwaarde - VAST.BOX3_VRIJ) * VAST.BOX3_RENDEMENT * VAST.BOX3_TARIEF;
+    }
+    cum.push(overwaarde - overstapkosten(p, woningwaarde) - box3);
   }
   return cum;
 }
